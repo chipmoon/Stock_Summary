@@ -62,9 +62,14 @@ def main():
             logger.info(f"Syncing emails from the last {args.days} days (Catch-up mode)...")
             email_iter = scout.fetch_recent_trades(days=args.days, since_date=args.since)
 
-        emails_processed = 0
+        # 3. Synchronize Records
         trades_recorded = 0
+        emails_processed = 0
         
+        # Luôn cập nhật giờ quét mới làm bằng chứng bot đã chạy (ngay cả khi chưa tìm thấy mail)
+        if not dry_run:
+            ledger.update_sync_timestamp()
+
         for subject, email_body in email_iter:
             emails_processed += 1
             trades = TradeParser.parse(subject, email_body)
@@ -81,9 +86,8 @@ def main():
             else:
                 logger.warning(f"Failed to parse any trade from email: {subject}")
 
-        # Update Portfolio Summary (only if not dry run)
-        if not dry_run and (trades_recorded > 0 or emails_processed > 0):
-             # Force update if we scanned emails to refresh real-time dashboard prices
+        # Update Portfolio Summary (always if not dry run to refresh prices and sync time)
+        if not dry_run:
             ledger.update_portfolio_summary()
 
         # Final Report
