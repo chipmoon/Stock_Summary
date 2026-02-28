@@ -339,7 +339,8 @@ class SheetsLedger:
             
             # KPI Formulas & Values
             from datetime import timedelta
-            now_tw = (datetime.now() + timedelta(hours=0)).strftime("%Y-%m-%d %H:%M:%S") # Múi giờ server
+            # GitHub runs in UTC, so add 8 hours for Taiwan/Vietnam time
+            now_tw = (datetime.now() + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S")
             
             # Find end row of data
             last_data_row = 10 + len(summary_rows)
