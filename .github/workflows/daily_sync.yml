@@ -47,6 +47,7 @@ jobs:
           WORKSHEET_NAME: ${{ secrets.WORKSHEET_NAME }}
           GOOGLE_SHEETS_KEY_FILE: ./google_key.json
           DRY_RUN: 'False'
+          PYTHONPATH: .
         run: |
           # Nếu chạy thủ công, sử dụng inputs. Nếu chạy tự động, dùng mặc định
           DAYS="${{ github.event.inputs.days || '2' }}"
