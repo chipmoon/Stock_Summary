@@ -30,13 +30,23 @@ def run_diagnostics(scout: EmailScout, ledger: SheetsLedger, dry_run: bool):
     logger.success("All systems green. Starting automation loop.")
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Trade Ledger Bot (Automation Interface)")
+    parser.add_argument("--days", type=int, default=2, help="Number of days back to scan (default: 2)")
+    parser.add_argument("--since", type=str, help="Start date in DD-Mon-YYYY format (e.g. 01-Jan-2026)")
+    parser.add_argument("--dry-run", action="store_true", help="Scan without writing to Google Sheets")
+    parser.add_argument("--force-sync", action="store_true", help="Scan only unread regardless of date (Original behavior)")
+    args = parser.parse_args()
+
     logger.info("Starting Trade Ledger Bot (Jarvis)...")
     
     try:
         scout = EmailScout()
         ledger = SheetsLedger()
         
-        dry_run = os.getenv("DRY_RUN", "True").lower() == "true"
+        # Priority: CLI argument > .env > Default(True)
+        env_dry_run = os.getenv("DRY_RUN", "True").lower() == "true"
+        dry_run = args.dry_run if args.dry_run else env_dry_run
 
         if dry_run:
             logger.warning("DRY RUN MODE ENABLED: No data will be written to Google Sheets.")
@@ -44,29 +54,36 @@ def main():
         # Diagnostic Check & Connection
         run_diagnostics(scout, ledger, dry_run)
 
-        # Single-Run Logic
-        logger.info("Scanning for new trade emails...")
+        # Sync Logic Choice
+        if args.force_sync:
+            logger.info("Syncing only UNREAD emails (Legacy mode)...")
+            email_iter = scout.fetch_new_emails()
+        else:
+            logger.info(f"Syncing emails from the last {args.days} days (Catch-up mode)...")
+            email_iter = scout.fetch_recent_trades(days=args.days, since_date=args.since)
+
         emails_processed = 0
         trades_recorded = 0
         
-        for subject, email_body in scout.fetch_new_emails():
+        for subject, email_body in email_iter:
             emails_processed += 1
             trades = TradeParser.parse(subject, email_body)
             
             if trades:
                 for trade in trades:
-                    logger.success(f"Extracted: {trade.symbol} {trade.side} @ {trade.price}")
+                    logger.success(f"Extracted: {trade.symbol} {trade.side} @ {trade.price} on {trade.date.date()}")
                     
                     if dry_run:
                         logger.info(f"[DRY RUN] Would record: {trade.model_dump()}")
                     else:
-                        ledger.append_trade(trade)
-                        trades_recorded += 1
+                        if ledger.append_trade(trade):
+                            trades_recorded += 1
             else:
                 logger.warning(f"Failed to parse any trade from email: {subject}")
 
         # Update Portfolio Summary (only if not dry run)
-        if not dry_run and trades_recorded >= 0:
+        if not dry_run and (trades_recorded > 0 or emails_processed > 0):
+             # Force update if we scanned emails to refresh real-time dashboard prices
             ledger.update_portfolio_summary()
 
         # Final Report
@@ -75,10 +92,9 @@ def main():
         logger.info(f"Emails Scanned: {emails_processed}")
         logger.info(f"Trades Recorded: {trades_recorded}")
         if emails_processed == 0:
-            logger.info("No unread trade emails found. Tip: Mark your Fubon email as 'Unread' in Gmail to process it.")
+            logger.info("No trade emails found in the specified range.")
             
         logger.info("=" * 30)
-        
         sys.exit(0)
 
     except KeyboardInterrupt:
