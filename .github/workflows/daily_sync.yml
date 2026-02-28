@@ -35,7 +35,7 @@ jobs:
 
       - name: Create Google Sheets Key File
         run: |
-          echo "${{ secrets.GOOGLE_SHEETS_KEY_JSON }}" > google_key.json
+          echo "${{ secrets.GOOGLE_CREDENTIALS }}" > google_key.json
 
       - name: Run Trade Sync
         env:
@@ -46,7 +46,7 @@ jobs:
           EMAIL_FOLDER: ${{ secrets.EMAIL_FOLDER || 'INBOX' }}
           
           # Cấu hình Google Sheets
-          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+          SPREADSHEET_ID: ${{ secrets.SHEET_ID }}
           WORKSHEET_NAME: ${{ secrets.WORKSHEET_NAME || 'Buy_Sell_Status' }}
           GOOGLE_SHEETS_KEY_FILE: ./google_key.json
           
