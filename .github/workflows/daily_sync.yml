@@ -39,13 +39,18 @@ jobs:
 
       - name: Run Trade Sync
         env:
-          EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
+          # Cấu hình Mail (Mặc định dùng Gmail nếu không có Secret)
+          EMAIL_HOST: ${{ secrets.EMAIL_HOST || 'imap.gmail.com' }}
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
-          EMAIL_FOLDER: ${{ secrets.EMAIL_FOLDER }}
+          EMAIL_FOLDER: ${{ secrets.EMAIL_FOLDER || 'INBOX' }}
+          
+          # Cấu hình Google Sheets
           SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
-          WORKSHEET_NAME: ${{ secrets.WORKSHEET_NAME }}
+          WORKSHEET_NAME: ${{ secrets.WORKSHEET_NAME || 'Buy_Sell_Status' }}
           GOOGLE_SHEETS_KEY_FILE: ./google_key.json
+          
+          # Cấu hình hệ thống
           DRY_RUN: 'False'
           PYTHONPATH: .
         run: |
