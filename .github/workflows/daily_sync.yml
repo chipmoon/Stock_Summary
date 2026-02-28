@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       days:
-        description: 'Số ngày quét ngược lại (mặc định: 2)'
+        description: 'Số ngày quét ngược lại (mặc định: 1)'
         required: false
-        default: '2'
+        default: '1'
       since:
         description: 'Quét từ ngày cụ thể (Dịnh dạng: DD-Mon-YYYY, ví dụ: 01-Jan-2026)'
         required: false
