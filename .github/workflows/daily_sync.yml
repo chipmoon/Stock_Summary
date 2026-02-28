@@ -34,8 +34,10 @@ jobs:
           pip install -r requirements.txt
 
       - name: Create Google Sheets Key File
+        env:
+          GOOGLE_JSON: ${{ secrets.GOOGLE_CREDENTIALS }}
         run: |
-          echo "${{ secrets.GOOGLE_CREDENTIALS }}" > google_key.json
+          echo "$GOOGLE_JSON" > google_key.json
 
       - name: Run Trade Sync
         env:
