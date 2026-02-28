@@ -334,19 +334,23 @@ class SheetsLedger:
             dash_sheet.update("A1", [["--- MORGAN TOTAL WEALTH EXECUTIVE DASHBOARD ---"]])
             
             # KPI Names
-            kpi_labels = [["Total Realized P/L", "Unrealized P/L (Live)", "Total Wealth Change", "ROI %"]]
-            dash_sheet.update("A3:D3", kpi_labels)
+            kpi_labels = [["Total Realized P/L", "Unrealized P/L (Live)", "Total Wealth Change", "ROI %", "Last Sync (TW Time)"]]
+            dash_sheet.update("A3:E3", kpi_labels)
             
-            # KPI Formulas (Dynamically referencing the table below)
+            # KPI Formulas & Values
+            from datetime import timedelta
+            now_tw = (datetime.now() + timedelta(hours=0)).strftime("%Y-%m-%d %H:%M:%S") # Múi giờ server
+            
             # Find end row of data
             last_data_row = 10 + len(summary_rows)
-            kpi_formulas = [[
+            kpi_data = [[
                 f"=SUM(H11:H{last_data_row})", # Total Realized
                 f"=SUM(F11:F{last_data_row})", # Unrealized
                 "=A4+B4",                      # Total Wealth Change
-                "=IFERROR(C4/SUMPRODUCT(C11:C{lr}, D11:D{lr}), 0)".replace("{lr}", str(last_data_row)) # ROI
+                "=IFERROR(C4/SUMPRODUCT(C11:C{lr}, D11:D{lr}), 0)".replace("{lr}", str(last_data_row)), # ROI
+                now_tw                         # Timestamp
             ]]
-            dash_sheet.update("A4:D4", kpi_formulas, value_input_option='USER_ENTERED')
+            dash_sheet.update("A4:E4", kpi_data, value_input_option='USER_ENTERED')
 
             # --- HOLDINGS TABLE ---
             table_headers = [["Code", "Asset Name", "Qty", "Avg Buy", "Live Price", "Unrealized P/L", "P/L %", "Realized P/L"]]
@@ -368,6 +372,7 @@ class SheetsLedger:
             # KPI Colors & Formats
             dash_sheet.format("A4:C4", {**twd_format, "textFormat": {"bold": True, "fontSize": 12}})
             dash_sheet.format("D4", {"numberFormat": {"type": "PERCENT", "pattern": "0.00%"}, "textFormat": {"bold": True}})
+            dash_sheet.format("E4", {"textFormat": {"italic": True, "fontSize": 10, "foregroundColor": {"red": 0.4, "green": 0.4, "blue": 0.4}}})
             
             # Table Header
             dash_sheet.format("A10:H10", {"textFormat": {"bold": True, "foregroundColor": {"red": 1, "green": 1, "blue": 1}}, "backgroundColor": {"red": 0.2, "green": 0.2, "blue": 0.2}})
