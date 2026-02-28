@@ -1,16 +1,23 @@
-name: Daily Portfolio Sync
+name: Daily Trade Sync
 
 on:
   schedule:
-    # Runs at 12:00 UTC (20:00 Taiwan time) every day
+    # Chạy hàng ngày lúc 8:00 PM giờ TW
     - cron: '0 12 * * *'
   workflow_dispatch:
-    # Allows manual triggering from the GitHub UI
+    inputs:
+      days:
+        description: 'Số ngày quét ngược lại (mặc định: 2)'
+        required: false
+        default: '2'
+      since:
+        description: 'Quét từ ngày cụ thể (Dịnh dạng: DD-Mon-YYYY, ví dụ: 01-Jan-2026)'
+        required: false
+        default: ''
 
 jobs:
-  sync:
+  sync-trades:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -18,7 +25,8 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.11'
+          cache: 'pip'
 
       - name: Install Dependencies
         run: |
@@ -27,7 +35,7 @@ jobs:
 
       - name: Create Google Sheets Key File
         run: |
-          echo '${{ secrets.GOOGLE_SHEETS_JSON }}' > service_account.json
+          echo "${{ secrets.GOOGLE_SHEETS_KEY_JSON }}" > google_key.json
 
       - name: Run Trade Sync
         env:
@@ -35,12 +43,19 @@ jobs:
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
           EMAIL_FOLDER: ${{ secrets.EMAIL_FOLDER }}
-          GOOGLE_SHEETS_KEY_FILE: service_account.json
           SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
           WORKSHEET_NAME: ${{ secrets.WORKSHEET_NAME }}
-          DRY_RUN: False
+          GOOGLE_SHEETS_KEY_FILE: ./google_key.json
+          DRY_RUN: 'False'
         run: |
-          # Precise daily sync: scan only the last day for efficiency
-          SINCE_DATE=$(date -d "1 day ago" +%d-%b-%Y)
-          echo "Syncing trades since: $SINCE_DATE"
-          python sync_history.py --since $SINCE_DATE
+          # Nếu chạy thủ công, sử dụng inputs. Nếu chạy tự động, dùng mặc định
+          DAYS="${{ github.event.inputs.days || '2' }}"
+          SINCE="${{ github.event.inputs.since || '' }}"
+          
+          CMD="python src/main.py --days $DAYS"
+          if [ -n "$SINCE" ]; then
+            CMD="$CMD --since $SINCE"
+          fi
+          
+          echo "Executing: $CMD"
+          $CMD
