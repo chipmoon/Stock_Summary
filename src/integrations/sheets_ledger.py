@@ -213,6 +213,30 @@ class SheetsLedger:
                 continue
         return 0.0
 
+    def update_sync_timestamp(self):
+        """Ưu tiên ghi giờ quét mới nhất lên Dashboard làm bằng chứng bot đã chạy"""
+        try:
+            spreadsheet = self.sheet.spreadsheet
+            dash_name = "Executive_Dashboard"
+            try:
+                dash_sheet = spreadsheet.worksheet(dash_name)
+            except gspread.exceptions.WorksheetNotFound:
+                dash_sheet = spreadsheet.add_worksheet(dash_name, 10, 5)
+
+            # Cài đặt nhãn và giờ (GMT+8)
+            from datetime import timedelta
+            now_tw = (datetime.now() + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S")
+            
+            # Cập nhật nhãn và giờ
+            dash_sheet.update("E3", [["Last Sync (TW Time)"]])
+            dash_sheet.update("E4", [[now_tw]])
+            
+            # Format nhanh cho ô giờ
+            dash_sheet.format("E4", {"textFormat": {"italic": True, "fontSize": 10, "foregroundColor": {"red": 0.4, "green": 0.4, "blue": 0.4}}})
+            logger.info(f"Updated Last Sync timestamp on Dashboard: {now_tw}")
+        except Exception as e:
+            logger.error(f"Failed to update sync timestamp: {e}")
+
     def update_portfolio_summary(self):
         """
         Expert AI Manager: Generates a 'Morgan-style' Total Wealth Executive Dashboard.
