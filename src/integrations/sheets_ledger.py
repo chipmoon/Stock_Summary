@@ -319,16 +319,15 @@ class SheetsLedger:
                     ]
                     summary_rows.append(row_data)
 
-            # Create/Reset Dashboard Sheet
+            # Get or Create Dashboard Sheet
             spreadsheet = self.sheet.spreadsheet
             dash_name = "Executive_Dashboard"
             try:
-                ws = spreadsheet.worksheet(dash_name)
-                spreadsheet.del_worksheet(ws)
+                dash_sheet = spreadsheet.worksheet(dash_name)
+                # Clear all previous values & formatting for a fresh start
+                dash_sheet.clear()
             except gspread.exceptions.WorksheetNotFound:
-                pass
-
-            dash_sheet = spreadsheet.add_worksheet(dash_name, 100, 20)
+                dash_sheet = spreadsheet.add_worksheet(dash_name, 100, 20)
             
             # --- HEADER & KPIs ---
             dash_sheet.update("A1", [["--- MORGAN TOTAL WEALTH EXECUTIVE DASHBOARD ---"]])
